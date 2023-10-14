@@ -8,7 +8,7 @@ wp_endpoint = os.getenv("WP_URL")
 wp_auth = (os.getenv("WP_USERNAME"), os.getenv("WP_PASSWORD"))
 
 
-def publish_article(topic, article_html, meta_description):
+async def publish_article(topic, article_html, meta_description):
     try:
         article_data = {
             "title": topic.capitalize(),

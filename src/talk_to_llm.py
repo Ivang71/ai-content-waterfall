@@ -6,7 +6,7 @@ load_dotenv('../.env')
 llm_url = os.getenv("LLM_URL")
 
 
-def request_llm(payload, type, topic):
+async def request_llm(payload, type, topic):
     try:
         print(f"getting article {topic}")
         response = requests.post(llm_url, json=payload)
@@ -16,10 +16,10 @@ def request_llm(payload, type, topic):
         raise Exception(f"Error generating {type} on topic {topic}\n{e}")
 
 
-def talk_to_llm(topic):
+async def talk_to_llm(topic):
     while True:
-        article = request_llm({
-            "prompt": f"[INST] Write a web post on the topic How to invest to retire early. Integrate related images with descriptions enclosed in square brackets between paragraphs.\
+        article = await request_llm({
+            "prompt": f"[INST] Write a web post on the topic {topic}. Integrate related images with descriptions enclosed in square brackets between paragraphs.\
                         For instance:\
                         text text [smiling person enjoying retirement] text text text [/INST]\n", # \n6000 characters is the minimum
             "version": "d24902e3fa9b698cc208b5e63136c4e26e828659a9f09827ca6ec5bb83014381",
@@ -29,7 +29,7 @@ def talk_to_llm(topic):
             "maxTokens": 4096,
         }, "article", topic)
 
-        meta_description = request_llm({
+        meta_description = await request_llm({
             "prompt": f"write a meta description for the following article, do not write any commentary or clarifications, do not use quotes. Just the description. Article: {article}", # \n6000 characters is the minimum
             "version": "d24902e3fa9b698cc208b5e63136c4e26e828659a9f09827ca6ec5bb83014381",
             "systemPrompt": "You are a helpful assistant.",

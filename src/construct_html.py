@@ -1,4 +1,4 @@
-import requests, os, random, string, re
+import requests, os, random, string, re, sys
 from concurrent.futures import ThreadPoolExecutor
 from insistent_request import insistent_request
 from dotenv import load_dotenv
@@ -15,7 +15,7 @@ images_folder = "../images/"
 def generate_image(prompt):
     """writes image to disk, returns the file name"""
     try:
-        response = insistent_request(requests.post, ai_url, json={'inputs': prompt})
+        response = insistent_request(requests.post, True, ai_url, json={'inputs': prompt})
         name = ''.join(random.choices(string.ascii_letters + string.digits, k=10)) + '.webp'
     except Exception as e:
         raise Exception(f"Failed to generate image {prompt} {e}")
@@ -25,7 +25,8 @@ def generate_image(prompt):
             f.write(response.content)
     except Exception as e:
         raise Exception(f"Failed to write the file {name} for the prompt {prompt}\n{e}")
-    
+    with open("../images.txt", "a") as f:
+        f.write(f"\n {name} {prompt} {str(sys.getsizeof(response.content))}")
     return name
 
 
@@ -55,7 +56,7 @@ def process_description(description):
     return f'<img src="{image_link}" alt="{description}" width=1024 height=1024>'
 
 
-def construct_html(article_text):
+async def construct_html(article_text):
     image_descriptions = re.findall(r'\[([^]]+)\]', article_text) # Extract image descriptions enclosed in square brackets
 
     with ThreadPoolExecutor() as executor:
@@ -65,3 +66,19 @@ def construct_html(article_text):
 
     return re.sub(r'\[([^]]+)\]', lambda x: img_tags.pop(0), article_text) # Replace [image description] placeholders
 
+prompts = [
+    "A serene beach at sunset",
+    "Colorful hot air balloons in the sky",
+    "Majestic mountains covered in snow",
+    "Vibrant cityscape at night",
+    "Lush green forest with a waterfall",
+    "Quaint cottage in a flowery meadow",
+    "Galaxy filled with stars and planets",
+    "Enchanted castle on a hill",
+    "Tropical paradise with palm trees",
+    "Space exploration and futuristic city",
+    "Whimsical underwater world with marine life"
+]
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    executor.map(generate_image, prompts)

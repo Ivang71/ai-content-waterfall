@@ -1,16 +1,8 @@
-import asyncio, random, multiprocessing
+import asyncio, multiprocessing
 from typing import List
 from talk_to_llm import talk_to_llm
 from construct_html import construct_html
-from publish import publish_article  
-
-
-async def async_task():
-    wait = random.randint(3, 20)
-    print(f'getting {wait}')
-    await asyncio.sleep(wait)
-    print(f"got {wait}")
-    return wait
+from publish import publish_article
 
 
 def split_array(data, num_pieces):
