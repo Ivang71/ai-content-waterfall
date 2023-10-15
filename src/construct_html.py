@@ -26,8 +26,8 @@ def generate_image(prompt):
             f.write(response.content)
     except Exception as e:
         raise Exception(f"Failed to write the file {name} for the prompt {prompt}\n{e}")
-    with open("../images.txt", "a") as f:
-        f.write(f"\n {name} {prompt} {str(sys.getsizeof(response.content))}")
+    # with open("../images.txt", "a") as f:
+    #     f.write(f"\n {name} {prompt} {str(sys.getsizeof(response.content))}")
     return name
 
 

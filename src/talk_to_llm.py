@@ -52,7 +52,7 @@ def talk_to_llm(topic):
 
     article = re.sub(r'=', '', article)
     print(f"Got article about {topic}")
-    with open('../articles.txt', 'a') as file:
-        file.write('\n\n\n\n' + article)
+    # with open('../articles.txt', 'a') as file:
+    #     file.write('\n\n\n\n' + article)
 
     return article, meta_description
