@@ -1,4 +1,4 @@
-import requests
+import requests, random, re
 
 def fetch_proxy_list(protocol):
     response = requests.get(f'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/{protocol}.txt')
@@ -10,5 +10,17 @@ proxies = []
 
 for protocol in protocols:
     proxies.extend(fetch_proxy_list(protocol))
+
+
+def get_proxied_session() -> requests.Session:
+    proxy = random.choice(proxies)
     
+    session = requests.Session()
+    session.proxies = {'http': proxy}
+
+    session.headers.update({
+        "X-Forwarded-For": re.search(r'(\d+\.\d+\.\d+\.\d+)', proxy).group(1),
+    })
+    
+    return session
 

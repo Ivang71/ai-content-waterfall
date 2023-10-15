@@ -1,11 +1,12 @@
-import asyncio, multiprocessing
+from multiprocessing import Process, cpu_count
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import List
 from talk_to_llm import talk_to_llm
 from construct_html import construct_html
 from publish import publish_article
 
 
-def split_array(data, num_pieces):
+def split_array_evenly(data, num_pieces):
     avg_chunk_size = len(data) // num_pieces
     remainder = len(data) % num_pieces
     chunks = []
@@ -20,10 +21,10 @@ def split_array(data, num_pieces):
     return chunks
 
 
-async def process_topic(topic: str):
+def process_topic(topic: str):
     try:
-        generated_text, meta_description = await talk_to_llm(topic)
-        article_html = await construct_html(generated_text)
+        generated_text, meta_description = talk_to_llm(topic)
+        article_html = construct_html(generated_text)
         publish_article(topic, article_html, meta_description)
 
     except Exception as e:
@@ -33,49 +34,24 @@ async def process_topic(topic: str):
             f.write(f"\n{topic}")
 
 
-async def process_topic_list(topic_list: List[str]):
-    max_concurrent_tasks = 3
-    queue = asyncio.Queue(maxsize=max_concurrent_tasks)
+def process_topic_list(topic_list: List[str]):
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(process_topic, item) for item in topic_list]
 
-    async def worker():
-        while True:
-            topic = await queue.get()
-            print(topic)
-            await process_topic(topic.strip())
-            queue.task_done()
-
-    # Create worker tasks
-    tasks = []
-    for _ in range(max_concurrent_tasks):
-        task = asyncio.create_task(worker())
-        tasks.append(task)
-
-    # Add topics to the queue
-    for topic in topic_list:
-        await queue.put(topic.strip())
-
-    # Wait for all tasks in the queue to be processed
-    await queue.join()
-
-    # Cancel worker tasks
-    for task in tasks:
-        task.cancel()
-
-    
-def process_topic_list_in_process(topic_list):
-    asyncio.run(process_topic_list(topic_list))
-
+    wait(futures)
+Ы
 
 if __name__ == "__main__":
     with open('../topics.txt', 'r') as file:
         topics = file.readlines()
     
     processes = []
-    cpu_count = multiprocessing.cpu_count()
-    topic_lists = split_array(topics, cpu_count)
+    # cpu_count = cpu_count()
+    cpu_count = 1
+    topic_lists = split_array_evenly(topics, cpu_count)
     
     for topic_list in topic_lists:
-        process = multiprocessing.Process(target=process_topic_list, args=(topic_list,))
+        process = Process(target=process_topic_list, args=(topic_list,))
         processes.append(process)
         process.start()
 

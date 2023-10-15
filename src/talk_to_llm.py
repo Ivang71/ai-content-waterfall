@@ -6,9 +6,9 @@ load_dotenv('../.env')
 llm_url = os.getenv("LLM_URL")
 
 
-async def request_llm(payload, type, topic):
+def request_llm(payload, type, topic):
     try:
-        print(f"getting article {topic}")
+        print(f"getting {type} {topic[:30]}")
         response = requests.post(llm_url, json=payload)
         response.raise_for_status()
         return response.text
@@ -16,12 +16,15 @@ async def request_llm(payload, type, topic):
         raise Exception(f"Error generating {type} on topic {topic}\n{e}")
 
 
-async def talk_to_llm(topic):
+def talk_to_llm(topic):
     while True:
-        article = await request_llm({
-            "prompt": f"[INST] Write a web post on the topic {topic}. Integrate related images with descriptions enclosed in square brackets between paragraphs.\
-                        For instance:\
-                        text text [smiling person enjoying retirement] text text text [/INST]\n", # \n6000 characters is the minimum
+        article = request_llm({
+            "prompt": f"""[INST] Write a lengthy web article on the topic How to invest to retire early.
+                                 No clarifications, no introduction, no title.
+                                 The minimum length is 6000 characters.
+                                 Integrate related images with descriptions enclosed in square brackets between paragraphs.
+                                 For instance:
+                                 text text [smiling person enjoying retirement] text text text [/INST]\n""", # \n6000 characters is the minimum
             "version": "d24902e3fa9b698cc208b5e63136c4e26e828659a9f09827ca6ec5bb83014381",
             "systemPrompt": "You are a helpful assistant.",
             "temperature": 1,
@@ -29,7 +32,13 @@ async def talk_to_llm(topic):
             "maxTokens": 4096,
         }, "article", topic)
 
-        meta_description = await request_llm({
+        if (article and re.search(r'\[.*?\]', article)):
+            break
+
+        print(f"There's a problem getting {topic}")
+
+    while True:
+        meta_description = request_llm({
             "prompt": f"write a meta description for the following article, do not write any commentary or clarifications, do not use quotes. Just the description. Article: {article}", # \n6000 characters is the minimum
             "version": "d24902e3fa9b698cc208b5e63136c4e26e828659a9f09827ca6ec5bb83014381",
             "systemPrompt": "You are a helpful assistant.",
@@ -38,10 +47,8 @@ async def talk_to_llm(topic):
             "maxTokens": 256,
         }, "meta description", topic)
         
-        if (article and meta_description and re.search(r'\[.*?\]', article)):
+        if meta_description:
             break
-
-        print(f"There's a problem getting {topic}")
 
     article = re.sub(r'=', '', article)
     print(f"Got article about {topic}")

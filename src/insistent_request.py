@@ -1,59 +1,36 @@
-import time, random, traceback, socks, csv, requests, socket
+import time, traceback
+from requests import Session, Response
+from proxied_session import get_proxied_session
 
 
 max_retries=197
-retry_interval=12
+retry_interval=3
 
 
-proxies = []
-with open('../proxies.csv', 'r') as csvfile:
-    reader = csv.reader(csvfile)
-    next(reader)
-    for row in reader:
-        proxy = {
-            "ip": row[0].strip('"'),
-            "port": row[7].strip('"'),
-            "protocol": row[8].strip('"'),
-        }
-        proxies.append(proxy)
-
-protocol_mapping = {
-    'socks4': socks.SOCKS4,
-    'socks5': socks.SOCKS4,
-    'http': socks.HTTP,
-}
-
-def send_request_through_proxy(url, proxy_list):
-    proxy = random.choice(proxy_list)
-    socks.set_proxy(protocol_mapping[proxy['protocol']], proxy["ip"], int(proxy["port"]))
-    try:
-        response = requests.get(url)
-        print(f"Response from {proxy['ip']}:{proxy['port']} - {response.status_code}")
-    except Exception as e:
-        print(f"Failed to connect through {proxy['ip']}:{proxy['port']}: {e}")
-
-
-def insistent_request(request_function, use_proxy=False, *args, **kwargs):
-    global proxies
-    args = args or ()
+def insistent_request(url: str, method: str, use_proxy=False, **kwargs) -> Response:
+    """
+    Args:
+        url (str): The URL to send the request to
+        method (str): The HTTP method (e.g., 'GET', 'POST', 'PUT', 'DELETE')
+        use_proxy (bool): Whether to use a proxy or not
+        **kwargs: Additional keyword arguments that are passed to the requests.request() function
+    """
     kwargs = kwargs or {}
 
-    if use_proxy:
-        proxy = random.choice(proxies)
-        socks.set_proxy(protocol_mapping[proxy['protocol']], proxy["ip"], int(proxy["port"]))
+    session = get_proxied_session() if use_proxy else Session()
 
     for _ in range(max_retries):
         try:
-            print(proxy)
-            response = request_function(*args, **kwargs)  
-            socks.set_default_proxy()              
+            response = session.request(method, url, timeout=13, **kwargs)
             return response
+        except TimeoutError:
+            session = get_proxied_session() if use_proxy else Session()
         except Exception as e:
             print(f"Error making request {e}")
             traceback.print_exc()
             print(f"Retrying in {retry_interval} seconds...")
             time.sleep(retry_interval)
-    else:
-        print(f"Max retries reached. Unable to complete the request.")
-        return None
+    
+    print(f"Max retries reached. Unable to complete the request.")
+    return None
     

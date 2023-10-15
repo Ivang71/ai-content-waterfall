@@ -15,11 +15,12 @@ images_folder = "../images/"
 def generate_image(prompt):
     """writes image to disk, returns the file name"""
     try:
-        response = insistent_request(requests.post, True, ai_url, json={'inputs': prompt})
+        response = insistent_request(ai_url, "POST",  True, json={'inputs': prompt})
+        print(response.status_code)
         name = ''.join(random.choices(string.ascii_letters + string.digits, k=10)) + '.webp'
     except Exception as e:
         raise Exception(f"Failed to generate image {prompt} {e}")
-    
+
     try:
         with open(f"{images_folder}{name}", "wb") as f:
             f.write(response.content)
@@ -56,7 +57,7 @@ def process_description(description):
     return f'<img src="{image_link}" alt="{description}" width=1024 height=1024>'
 
 
-async def construct_html(article_text):
+def construct_html(article_text):
     image_descriptions = re.findall(r'\[([^]]+)\]', article_text) # Extract image descriptions enclosed in square brackets
 
     with ThreadPoolExecutor() as executor:
@@ -65,20 +66,3 @@ async def construct_html(article_text):
     print(f"Constructed html for {article_text[:30]}")
 
     return re.sub(r'\[([^]]+)\]', lambda x: img_tags.pop(0), article_text) # Replace [image description] placeholders
-
-prompts = [
-    "A serene beach at sunset",
-    "Colorful hot air balloons in the sky",
-    "Majestic mountains covered in snow",
-    "Vibrant cityscape at night",
-    "Lush green forest with a waterfall",
-    "Quaint cottage in a flowery meadow",
-    "Galaxy filled with stars and planets",
-    "Enchanted castle on a hill",
-    "Tropical paradise with palm trees",
-    "Space exploration and futuristic city",
-    "Whimsical underwater world with marine life"
-]
-
-with ThreadPoolExecutor(max_workers=2) as executor:
-    executor.map(generate_image, prompts)
