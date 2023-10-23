@@ -1,8 +1,8 @@
 import os, requests
-from colors import ConsoleColors
+from waterfall import colors
 from dotenv import load_dotenv
 
-load_dotenv('../.env')
+load_dotenv()
 
 wp_endpoint = os.getenv("WP_URL")
 wp_auth = (os.getenv("WP_USERNAME"), os.getenv("WP_PASSWORD"))
@@ -23,6 +23,6 @@ def publish_article(topic, article_html, meta_description):
         }
         response = requests.post(wp_endpoint, auth=wp_auth, json=article_data)
         response.raise_for_status()
-        print("Published " + ConsoleColors.GREEN + topic + ConsoleColors.RESET)
+        print("Published " + colors.GREEN + topic + colors.RESET)
     except Exception as e:
         raise Exception(f"Error publishing {article_html[:50]}: {e}")

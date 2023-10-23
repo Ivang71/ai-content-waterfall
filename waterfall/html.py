@@ -1,9 +1,9 @@
 import requests, os, random, string, re, sys
 from concurrent.futures import ThreadPoolExecutor
-from insistent_request import insistent_request
+import insistent_request
 from dotenv import load_dotenv
 
-load_dotenv('../.env')
+load_dotenv()
 
 ai_url = os.getenv("IMAGE_AI_URL")
 host_url = os.getenv("IMAGE_HOST_API_URL")
@@ -15,13 +15,16 @@ images_folder = "../images/"
 def generate_image(prompt):
     """writes image to disk, returns the file name"""
     try:
-        response = insistent_request(ai_url, "POST",  True, json={'inputs': prompt})
-        print(response.status_code)
-        name = ''.join(random.choices(string.ascii_letters + string.digits, k=10)) + '.webp'
+        while True:
+            response = insistent_request.insistent_request(ai_url, "POST", True, json={'inputs': prompt})
+            if (sys.getsizeof(response.content) > 2000): # if response more than 2KB, accept image
+                break
     except Exception as e:
         raise Exception(f"Failed to generate image {prompt} {e}")
 
     try:
+        random_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        name = f"{prompt} {random_id}.webp"
         with open(f"{images_folder}{name}", "wb") as f:
             f.write(response.content)
     except Exception as e:

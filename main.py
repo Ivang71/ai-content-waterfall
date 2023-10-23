@@ -1,10 +1,16 @@
+import os
 from multiprocessing import Process, cpu_count
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import List
-from talk_to_llm import talk_to_llm
-from construct_html import construct_html
-from publish import publish_article
+from waterfall import llm, html, publisher
+from dotenv import load_dotenv
 
+load_dotenv()
+
+llm_url = os.getenv("LLM_URL")
+
+wp_endpoint = os.getenv("WP_URL")
+wp_auth = (os.getenv("WP_USERNAME"), os.getenv("WP_PASSWORD"))
 
 def split_array_evenly(data, num_pieces):
     avg_chunk_size = len(data) // num_pieces
@@ -23,14 +29,14 @@ def split_array_evenly(data, num_pieces):
 
 def process_topic(topic: str):
     try:
-        generated_text, meta_description = talk_to_llm(topic)
-        article_html = construct_html(generated_text)
-        publish_article(topic, article_html, meta_description)
+        generated_text, meta_description = llm.talk_to_llm(topic)
+        article_html = html.construct_html(generated_text)
+        publisher.publish_article(topic, article_html, meta_description)
 
     except Exception as e:
         print(f"Did not process {topic}")
         print(e)
-        with open("../unprocessed_topics.txt", "a") as f:
+        with open("./unprocessed_topics.txt", "a") as f:
             f.write(f"\n{topic}")
 
 
@@ -39,11 +45,12 @@ def process_topic_list(topic_list: List[str]):
         futures = [executor.submit(process_topic, item) for item in topic_list]
 
     wait(futures)
-Ы
+
 
 if __name__ == "__main__":
-    with open('../topics.txt', 'r') as file:
+    with open('./topics.txt', 'r') as file:
         topics = file.readlines()
+    topics = [topic.replace('"', '') for topic in topics]
     
     processes = []
     # cpu_count = cpu_count()

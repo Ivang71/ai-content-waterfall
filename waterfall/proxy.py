@@ -24,3 +24,6 @@ def get_proxied_session() -> requests.Session:
     
     return session
 
+
+def get_random_proxy() -> str:
+    return random.choice(proxies)
