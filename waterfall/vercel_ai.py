@@ -126,7 +126,7 @@ class Client:
                     if max_retries == 0:
                         raise MaxRetriesExceeded
                 elif "405" in e.args[0]:
-                    raise Exception("The model's down, try something else")
+                    raise Exception("The model's down, try later")
 
         text = ''
         for chunk in response.content.decode().split('\n'):

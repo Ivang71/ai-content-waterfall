@@ -2,15 +2,14 @@ import os
 from multiprocessing import Process, cpu_count
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import List
-from waterfall import llm, html, publisher
+from waterfall import constcuct_html, llm, publisher
 from dotenv import load_dotenv
 
 load_dotenv()
 
-llm_url = os.getenv("LLM_URL")
-
 wp_endpoint = os.getenv("WP_URL")
 wp_auth = (os.getenv("WP_USERNAME"), os.getenv("WP_PASSWORD"))
+
 
 def split_array_evenly(data, num_pieces):
     avg_chunk_size = len(data) // num_pieces
@@ -30,7 +29,7 @@ def split_array_evenly(data, num_pieces):
 def process_topic(topic: str):
     try:
         generated_text, meta_description = llm.talk_to_llm(topic)
-        article_html = html.construct_html(generated_text)
+        article_html = constcuct_html.construct_html(generated_text)
         publisher.publish_article(topic, article_html, meta_description)
 
     except Exception as e:
