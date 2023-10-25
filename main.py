@@ -2,7 +2,7 @@ import os
 from multiprocessing import Process, cpu_count
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import List
-from waterfall import constcuct_html, llm, publisher
+from waterfall import image_processing, publisher, llama2
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,8 +28,8 @@ def split_array_evenly(data, num_pieces):
 
 def process_topic(topic: str):
     try:
-        generated_text, meta_description = llm.talk_to_llm(topic)
-        article_html = constcuct_html.construct_html(generated_text)
+        generated_text, meta_description = llama2.generate_article(topic)
+        article_html = image_processing.process_images(generated_text)
         publisher.publish_article(topic, article_html, meta_description)
 
     except Exception as e:

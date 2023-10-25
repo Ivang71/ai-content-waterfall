@@ -60,7 +60,7 @@ def process_description(description):
     return f'<img src="{image_link}" alt="{description}" width=1024 height=1024>'
 
 
-def construct_html(article_text):
+def process_images(article_text):
     image_descriptions = re.findall(r'\[([^]]+)\]', article_text) # Extract image descriptions enclosed in square brackets
 
     with ThreadPoolExecutor() as executor:

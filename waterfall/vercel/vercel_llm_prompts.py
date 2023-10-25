@@ -52,12 +52,12 @@ Write out 100 of them in double quotes
 
 
 
-def get_table_of_content_prompt(topic: str) -> str:
+def get_table_of_contents_prompt(topic: str) -> str:
     return f"""{prompt_base}
 
-Write a table of content for a lengthy article on the topic {topic}. Write to conclusion. The headings should follow natural flow.
+Write a table of contents for a lengthy article on the topic {topic}. Write to conclusion. The headings should follow natural flow.
 No clarifications, no introduction, no title.
-Write each heading in parentheses. Then in square brackets [] write what it should be about and what type of content include: paragraph or list or something else.
+Write each heading in parentheses. Then in square brackets [] write what it should be about and what type of contents include: paragraph or list or something else.
 
 
 Example beginning:
