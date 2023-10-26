@@ -1,4 +1,5 @@
-import requests, re, time
+import requests, re
+from bs4 import BeautifulSoup
 
 
 models = {
@@ -46,6 +47,10 @@ def generate_article(topic):
             "maxTokens": 4096,
         }, "article", topic)
 
+        if article and re.search(r'\[.*?\]', article):
+            break
+
+    while True:
         meta_description = request_llm({
             "prompt": f"write a meta description for the following topic, do not write any commentary or clarifications, do not use quotes. Just the description. Topic: {topic}",
             "version": models["7b"],
@@ -55,13 +60,22 @@ def generate_article(topic):
             "maxTokens": 256,
         }, "meta description", topic)
 
-        if (article and meta_description and re.search(r'\[.*?\]', article)):
+        if (meta_description):
             break
 
-        print(f"There's a problem getting {topic}")
-
     article = re.sub(r'=', '', article)
-    print(f"Got article about {topic}")
+
+    soup = BeautifulSoup(article, 'html.parser')
+
+    for p_tag in soup.find_all('p'): # Find <p> tags with content less than 120 characters and replace them with <h2> tags
+        if len(p_tag.text) < 120:
+            new_h2_tag = soup.new_tag('h2')
+            new_h2_tag.string = p_tag.text
+            p_tag.replace_with(new_h2_tag)
+
+    article = soup.prettify()
+
+    print(f"Got article {topic}")
     with open('../articles.txt', 'a') as file:
         file.write('\n\n\n\n' + article)
 

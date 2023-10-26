@@ -1,5 +1,4 @@
 import os, requests
-from waterfall import colors
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,6 +22,6 @@ def publish_article(topic, article_html, meta_description):
         }
         response = requests.post(wp_endpoint, auth=wp_auth, json=article_data)
         response.raise_for_status()
-        print("Published " + colors.GREEN + topic + colors.RESET)
+        print("Published " + '\033[32m' + topic + '\033[0m')
     except Exception as e:
         raise Exception(f"Error publishing {article_html[:50]}: {e}")

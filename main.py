@@ -1,4 +1,4 @@
-import os
+import os, traceback
 from multiprocessing import Process, cpu_count
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import List
@@ -35,12 +35,13 @@ def process_topic(topic: str):
     except Exception as e:
         print(f"Did not process {topic}")
         print(e)
+        traceback.print_exc()
         with open("./unprocessed_topics.txt", "a") as f:
             f.write(f"\n{topic}")
 
 
 def process_topic_list(topic_list: List[str]):
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(process_topic, item) for item in topic_list]
 
     wait(futures)

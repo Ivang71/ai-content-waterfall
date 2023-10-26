@@ -1,63 +1,35 @@
-import requests, os, random, string, re, sys
+import random, re
 from concurrent.futures import ThreadPoolExecutor
-import insistent_request
-from dotenv import load_dotenv
-
-load_dotenv()
-
-ai_url = os.getenv("IMAGE_AI_URL")
-host_url = os.getenv("IMAGE_HOST_API_URL")
-host_key = os.getenv("IMAGE_HOST_API_KEY")
-
-images_folder = "../images/"
-
-
-def generate_image(prompt):
-    """writes image to disk, returns the file name"""
-    try:
-        while True:
-            response = insistent_request.insistent_request(ai_url, "POST", True, json={'inputs': prompt})
-            if (sys.getsizeof(response.content) > 2000): # if response more than 2KB, accept image
-                break
-    except Exception as e:
-        raise Exception(f"Failed to generate image {prompt} {e}")
-
-    try:
-        random_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-        name = f"{prompt} {random_id}.webp"
-        with open(f"{images_folder}{name}", "wb") as f:
-            f.write(response.content)
-    except Exception as e:
-        raise Exception(f"Failed to write the file {name} for the prompt {prompt}\n{e}")
-    # with open("../images.txt", "a") as f:
-    #     f.write(f"\n {name} {prompt} {str(sys.getsizeof(response.content))}")
-    return name
-
-
-def host_image(img_name):
-    """Hosts image, returns link"""
-    host_params = {
-        "key": host_key,
-        "action": "upload",
-        "format": "json"
-    }
-    img_path = f"{images_folder}{img_name}"
-    try:
-        with open(img_path, "rb") as image:
-            image = {"source": (img_path, image)}
-            response = requests.post(host_url, params=host_params, files=image)
-            response.raise_for_status()
-    except Exception as e:
-        raise Exception(f"Error hosting image {img_name}\n{e}")
-
-    os.remove(img_path)
-    return response.json()["image"]["url"]
+from PIL import Image
+from io import BytesIO
+from waterfall import proxy
 
 
 def process_description(description):
-    file_name = generate_image(description)
-    image_link = host_image(file_name)
-    return f'<img src="{image_link}" alt="{description}" width=1024 height=1024>'
+    after_colon = description.split(':')[-1].strip()
+    description_arr = after_colon.lower().split()
+    search_term = "+".join(description_arr)
+
+    result_count = 0
+    while not result_count:
+        session = proxy.get_proxied_session()
+        response = session.get(f"https://unsplash.com/ngetty/v3/search/images/creative?exclude_editorial_use_only=true&exclude_nudity=true&fields=display_set%2Creferral_destinations%2Ctitle&graphical_styles=photography&page_size=28&phrase={search_term}&sort_order=best_match")
+        result_count = response.json()['result_count']
+        if not result_count:
+            description_arr.pop()
+            search_term = "+".join(description_arr)
+
+    images_data_list = response.json()['images']
+
+    image_data = random.choice(images_data_list)
+    alt = image_data['title']
+    src = image_data['display_sizes'][-1]['uri']
+
+    response = session.get(src)
+    image = Image.open(BytesIO(response.content))
+    width, height = image.size
+
+    return f'<img src="{src}" alt="{alt}" width={width} height={height}>'
 
 
 def process_images(article_text):
@@ -69,3 +41,4 @@ def process_images(article_text):
     print(f"Constructed html for {article_text[:30]}")
 
     return re.sub(r'\[([^]]+)\]', lambda x: img_tags.pop(0), article_text) # Replace [image description] placeholders
+
