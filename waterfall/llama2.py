@@ -76,7 +76,7 @@ def generate_article(topic):
     article = soup.prettify()
 
     print(f"Got article {topic}")
-    with open('../articles.txt', 'a') as file:
+    with open('./articles.txt', 'a') as file:
         file.write('\n\n\n\n' + article)
 
     meta_description = get_last_match(r'"([^"]*)"', meta_description)
