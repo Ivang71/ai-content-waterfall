@@ -65,4 +65,4 @@ The script will generate website articles based on the topics provided in topics
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
